@@ -1,0 +1,4 @@
+interface:
+  display_name: "小红书会话读取"
+  short_description: "HTTP/API优先读取小红书，必要时再走Playwright兜底"
+  default_prompt: "使用 $xiaohongshu-session-reader 读取我给的小红书链接，先走HTTP/API提取主页卡片/详情信息，若被风控再自动切换Playwright兜底。"
