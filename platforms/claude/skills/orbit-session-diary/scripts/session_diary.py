@@ -876,12 +876,17 @@ def write_diary(
     dry_run: bool,
 ) -> Path:
     diary_root = vault_root / diary_dir
-    diary_root.mkdir(parents=True, exist_ok=True)
-    diary_path = diary_root / f"{target_day.isoformat()}.md"
+    diary_month_dir = diary_root / f"{target_day.year:04d}-{target_day.month:02d}"
+    diary_month_dir.mkdir(parents=True, exist_ok=True)
+    diary_path = diary_month_dir / f"{target_day.isoformat()}.md"
     template_path = diary_root / template_name
+    legacy_diary_path = diary_root / f"{target_day.isoformat()}.md"
 
     if diary_path.exists():
         original = diary_path.read_text(encoding="utf-8")
+    elif legacy_diary_path.exists():
+        # Backward compatibility: migrate old flat file layout into monthly folder.
+        original = legacy_diary_path.read_text(encoding="utf-8")
     else:
         original = ensure_seed_diary(template_path, target_day)
 
@@ -895,6 +900,11 @@ def write_diary(
     if merged != original:
         diary_path.write_text(merged, encoding="utf-8")
         os.utime(diary_path, None)
+        if legacy_diary_path != diary_path and legacy_diary_path.exists():
+            try:
+                legacy_diary_path.unlink()
+            except OSError:
+                pass
     return diary_path
 
 
@@ -922,7 +932,12 @@ def main() -> None:
     )
 
     vault_root = Path(os.path.expanduser(args.vault_root))
-    diary_path = vault_root / args.diary_dir / f"{target_day.isoformat()}.md"
+    diary_path = (
+        vault_root
+        / args.diary_dir
+        / f"{target_day.year:04d}-{target_day.month:02d}"
+        / f"{target_day.isoformat()}.md"
+    )
     if output_mode == "write-auto":
         compact_markdown = render_compact_section(
             section_title=args.section_title,

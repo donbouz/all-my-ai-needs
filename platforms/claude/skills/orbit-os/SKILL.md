@@ -2,9 +2,9 @@
 name: orbit-os
 version: "1.3.0"
 updated: 2026-02-25
-description: "知识库 OrbitOS Obsidian Vault 共享配置。Vault 结构、格式规则、排版规范。被 orbit-* 系列 skill 引用，不直接调用。"
+description: "知识库 OrbitOS Obsidian Vault 共享配置。Vault 结构、格式规则、排版规范。被 orbit-* 系列 skill 自动引用；也可在知识库相关操作中直接调用以获取上下文。"
 ---
-OrbitOS 共享配置，供 orbit-* 系列 skill 引用。
+OrbitOS 共享配置，供 orbit-* 系列 skill 自动引用；也可在知识库相关操作中直接调用以获取 Vault 上下文。
 
 # Vault 结构
 
@@ -12,7 +12,7 @@ OrbitOS 共享配置，供 orbit-* 系列 skill 引用。
 
 | 目录 | 用途 |
 |------|------|
-| `01_日记` | 每日日志 (`YYYY-MM-DD.md`) |
+| `01_日记` | 每日日志（按月归档：`YYYY-MM/YYYY-MM-DD.md`） |
 | `02_项目` | 活跃项目（扁平结构，按名称组织） |
 | `03_研究` | 永久参考资料 |
 | `04_知识沉淀` | 原子概念笔记 |
@@ -76,7 +76,7 @@ OrbitOS 共享配置，供 orbit-* 系列 skill 引用。
 
 # 日记填充规则
 
-写日记（`01_日记/YYYY-MM-DD.md`）时，`## 日志` 部分应自动从 GitHub 拉取当天跨仓库的 commit 记录。
+写日记（`01_日记/YYYY-MM/YYYY-MM-DD.md`）时，`## 日志` 部分应自动从 GitHub 拉取当天跨仓库的 commit 记录。
 
 - GitHub 用户名: `codingSamss`
 - 数据源: `gh api` Events API + Commits API

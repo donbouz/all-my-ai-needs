@@ -20,9 +20,11 @@ SCRIPT="$SKILLS_HOME/orbit-session-diary/scripts/session_diary.py"
    - `~/.codex/sessions/YYYY/MM/DD/*.jsonl`
    - `~/.claude/projects/**/*.jsonl`
 2. 默认排除 `rag-flow` / `rag-recall`（可在 `references/excludes.json` 扩展）。
-3. 先运行脚本提取“原始会话索引”（`output-mode=evidence`），索引里必须包含 `session_id / cwd / jsonl 文件路径 / 原话片段`。
-4. 助手必须回看关键 `jsonl` 原文后再人工归纳，直接写入日记正文（主线、主题聚合、结果汇总、关联项目）。
-5. 自动区块 `write-auto` 仅用于附录或对账，不能替代正文，也不能用来替代原始会话回看。
+3. 默认日记路径为：`01_日记/YYYY-MM/YYYY-MM-DD.md`（按月份归档）。
+4. 若用户未显式提供路径，默认写入上述配置路径，不需要二次询问路径确认。
+5. 先运行脚本提取“原始会话索引”（`output-mode=evidence`），索引里必须包含 `session_id / cwd / jsonl 文件路径 / 原话片段`。
+6. 助手必须回看关键 `jsonl` 原文后再人工归纳，直接写入日记正文（主线、主题聚合、结果汇总、关联项目）。
+7. 自动区块 `write-auto` 仅用于附录或对账，不能替代正文，也不能用来替代原始会话回看。
 
 ## 最终产出（强制）
 

@@ -16,7 +16,7 @@ python3 "$CODEX_HOME/skills/orbit-session-diary/scripts/session_diary.py"
 ```
 
 1. 先跑脚本拿原始会话索引（上面命令）。
-2. 助手基于证据人工汇总并直接写 `01_日记/YYYY-MM-DD.md` 正文。
+2. 助手基于证据人工汇总并直接写 `01_日记/YYYY-MM/YYYY-MM-DD.md` 正文。
 3. 若通过终端改动 `.md`，执行 `touch <file>` 刷新 Obsidian 感知。
 
 正文输出建议固定为：`今日主线` + `今天做了什么` + `主题聚合（核心）` + `结果汇总` + `关联项目`。
