@@ -4,6 +4,10 @@ sandbox = "danger-full-access"
 personality = "pragmatic"
 sandbox_mode = "danger-full-access"
 
+[model_providers.openai]
+# 30 minutes (1800000 ms) stream idle timeout for long-running sessions.
+stream_idle_timeout_ms = 1800000
+
 notify = ["/bin/zsh", "-lc", "CODEX_NOTIFY_DEBUG=1 /usr/bin/python3 \"$HOME/.codex/bin/codex-notify.py\""]
 
 # 使用 $HOME 变量，跨机器迁移时无需替换用户名。
