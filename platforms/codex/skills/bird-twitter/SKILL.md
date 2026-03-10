@@ -40,6 +40,7 @@ Default rule: if user says only `timeline` with no qualifier, treat it as `i/tim
    - `HTTP_PROXY=http://127.0.0.1:7897`
    - `HTTPS_PROXY=http://127.0.0.1:7897`
 4. Run `HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 bird --cookie-source chrome --timeout 15000 whoami` to verify authentication
+5. If Python requests fail with SSL certificate verification behind proxy, ensure `certifi` is available (`python3 -c "import certifi; print(certifi.where())"`).
 
 ## Global Options
 
@@ -52,6 +53,11 @@ Recommended command prefix:
 ```bash
 HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 bird --cookie-source chrome --timeout 15000 <command>
 ```
+
+For `device_follow_timeline.py`:
+- Script now auto-detects `certifi` CA bundle and logs `SSL trust source`.
+- You can still force trust source with `SSL_CERT_FILE=<path>`.
+- Emergency fallback only: set `BIRD_INSECURE_SSL=1` to retry once without SSL verification.
 
 Example:
 ```bash
@@ -126,6 +132,14 @@ HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 bird --cookie
 `x.com/i/timeline` 与 `home --following` 不是同一数据源。该命令直接请求 `device_follow` REST endpoint，默认读取 20 条。
 ```bash
 SKILLS_HOME="$HOME/.codex/skills"
+HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 \
+python3 "${SKILLS_HOME}/bird-twitter/scripts/device_follow_timeline.py" --count 20
+```
+
+遇到代理证书问题时可显式指定 CA（可选）：
+```bash
+SKILLS_HOME="$HOME/.codex/skills"
+SSL_CERT_FILE="$(python3 -c 'import certifi; print(certifi.where())')" \
 HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 \
 python3 "${SKILLS_HOME}/bird-twitter/scripts/device_follow_timeline.py" --count 20
 ```

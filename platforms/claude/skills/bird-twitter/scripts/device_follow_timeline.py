@@ -12,6 +12,7 @@ import os
 import re
 import secrets
 import sqlite3
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -384,21 +385,75 @@ def build_headers(args: argparse.Namespace, auth_token: str, ct0: str) -> dict[s
 
 
 def build_opener() -> urllib.request.OpenerDirector:
+    return build_opener_with_ssl_context(ssl.create_default_context())
+
+
+def build_opener_with_ssl_context(ssl_context: ssl.SSLContext) -> urllib.request.OpenerDirector:
     proxy = os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY")
+    handlers: list[Any] = [urllib.request.HTTPSHandler(context=ssl_context)]
     if proxy:
-        return urllib.request.build_opener(
-            urllib.request.ProxyHandler({"http": proxy, "https": proxy})
-        )
-    return urllib.request.build_opener()
+        handlers.insert(0, urllib.request.ProxyHandler({"http": proxy, "https": proxy}))
+    return urllib.request.build_opener(*handlers)
+
+
+def build_ssl_context() -> tuple[ssl.SSLContext, str]:
+    env_cafile = (os.getenv("SSL_CERT_FILE") or "").strip()
+    env_capath = (os.getenv("SSL_CERT_DIR") or "").strip()
+    if env_cafile or env_capath:
+        try:
+            context = ssl.create_default_context(
+                cafile=env_cafile or None,
+                capath=env_capath or None,
+            )
+            source = "env"
+            if env_cafile:
+                source += f":SSL_CERT_FILE={env_cafile}"
+            elif env_capath:
+                source += f":SSL_CERT_DIR={env_capath}"
+            return context, source
+        except Exception as exc:
+            print(f"[warn] invalid SSL cert env, fallback to next trust source: {exc}", file=sys.stderr)
+
+    try:
+        import certifi  # type: ignore
+
+        cafile = certifi.where()
+        if cafile and Path(cafile).is_file():
+            return ssl.create_default_context(cafile=cafile), f"certifi:{cafile}"
+    except Exception:
+        pass
+
+    return ssl.create_default_context(), "system-default"
+
+
+def allow_insecure_ssl_retry() -> bool:
+    value = (os.getenv("BIRD_INSECURE_SSL") or "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
+def is_ssl_cert_verify_error(exc: urllib.error.URLError) -> bool:
+    text = f"{exc} {getattr(exc, 'reason', '')}".upper()
+    return "CERTIFICATE_VERIFY_FAILED" in text
+
+
+def open_request(
+    req: urllib.request.Request,
+    timeout_s: float,
+    ssl_context: ssl.SSLContext,
+) -> str:
+    opener = build_opener_with_ssl_context(ssl_context)
+    with opener.open(req, timeout=timeout_s) as resp:
+        return resp.read().decode("utf-8", errors="replace")
 
 
 def fetch_json(url: str, headers: dict[str, str], timeout_ms: int) -> dict[str, Any]:
     req = urllib.request.Request(url, headers=headers, method="GET")
-    opener = build_opener()
     timeout_s = max(1, timeout_ms / 1000)
+    ssl_context, ssl_source = build_ssl_context()
+    if ssl_source != "system-default":
+        print(f"[info] SSL trust source: {ssl_source}", file=sys.stderr)
     try:
-        with opener.open(req, timeout=timeout_s) as resp:
-            body = resp.read().decode("utf-8", errors="replace")
+        body = open_request(req, timeout_s=timeout_s, ssl_context=ssl_context)
     except urllib.error.HTTPError as exc:
         snippet = ""
         try:
@@ -407,7 +462,30 @@ def fetch_json(url: str, headers: dict[str, str], timeout_ms: int) -> dict[str, 
             pass
         raise DeviceFollowError(f"HTTP {exc.code} from device_follow: {snippet}") from exc
     except urllib.error.URLError as exc:
-        raise DeviceFollowError(f"Network error while calling device_follow: {exc}") from exc
+        if is_ssl_cert_verify_error(exc) and allow_insecure_ssl_retry():
+            print(
+                "[warn] SSL verification failed; retrying with insecure SSL because "
+                "BIRD_INSECURE_SSL is enabled.",
+                file=sys.stderr,
+            )
+            insecure_context = ssl._create_unverified_context()
+            try:
+                body = open_request(req, timeout_s=timeout_s, ssl_context=insecure_context)
+            except urllib.error.HTTPError as insecure_http_exc:
+                snippet = ""
+                try:
+                    snippet = insecure_http_exc.read(300).decode("utf-8", errors="replace")
+                except Exception:
+                    pass
+                raise DeviceFollowError(
+                    f"HTTP {insecure_http_exc.code} from device_follow: {snippet}"
+                ) from insecure_http_exc
+            except urllib.error.URLError as insecure_exc:
+                raise DeviceFollowError(
+                    f"Network error while calling device_follow: {insecure_exc}"
+                ) from insecure_exc
+        else:
+            raise DeviceFollowError(f"Network error while calling device_follow: {exc}") from exc
 
     try:
         payload = json.loads(body)
