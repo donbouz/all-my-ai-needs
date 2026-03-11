@@ -38,6 +38,7 @@
 - 可选参数：`--skills-only`（仅同步 skills）、`--root-only`（仅同步受管 root 配置）。
 - 同步策略：增量同步（不删除目录外未托管内容）。
 - `~/.codex/skills` 保留 `.system` 与本地未托管技能。
+- skill 运行态目录只同步 `SKILL.md` 与被技能正文使用的依赖；`README.md`、`setup.sh`、`skill.config.json` 保留在仓库，不进入 `~/.codex/skills`
 - 建议先执行 `--dry-run` 预览变更，再正式执行。
 
 ## 当前策略

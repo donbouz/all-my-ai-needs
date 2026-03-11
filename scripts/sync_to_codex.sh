@@ -123,6 +123,11 @@ base_rsync_args=(
   "--exclude" "*.pyo"
   "--exclude" ".DS_Store"
 )
+skill_runtime_noise_files=(
+  "README.md"
+  "setup.sh"
+  "skill.config.json"
+)
 if [ "$DRY_RUN" = "true" ]; then
   base_rsync_args+=("--dry-run" "--itemize-changes")
 fi
@@ -145,6 +150,42 @@ sync_dir_incremental() {
   mkdir -p "$target_dir"
   echo "[同步] ${label}: $source_dir -> $target_dir"
   rsync "${rsync_args[@]}" "$source_dir"/ "$target_dir"/
+}
+
+sync_skills_incremental() {
+  local source_root="$1"
+  local target_root="$2"
+  local skill_dir=""
+  local skill_name=""
+  local rsync_args=()
+  local noise_file=""
+
+  mkdir -p "$target_root"
+
+  for skill_dir in "$source_root"/*; do
+    [ -d "$skill_dir" ] || continue
+    skill_name="$(basename "$skill_dir")"
+    rsync_args=("${base_rsync_args[@]}")
+
+    for noise_file in "${skill_runtime_noise_files[@]}"; do
+      rsync_args+=("--exclude" "/$noise_file")
+    done
+
+    echo "[同步] skill/$skill_name: $skill_dir -> $target_root/$skill_name"
+    mkdir -p "$target_root/$skill_name"
+    rsync "${rsync_args[@]}" "$skill_dir"/ "$target_root/$skill_name"/
+
+    for noise_file in "${skill_runtime_noise_files[@]}"; do
+      if [ -e "$target_root/$skill_name/$noise_file" ]; then
+        if [ "$DRY_RUN" = "true" ]; then
+          echo "[清理预览] skill/$skill_name 删除运行态噪音: $target_root/$skill_name/$noise_file"
+        else
+          rm -f "$target_root/$skill_name/$noise_file"
+          echo "[清理] skill/$skill_name 删除运行态噪音: $target_root/$skill_name/$noise_file"
+        fi
+      fi
+    done
+  done
 }
 
 extract_composio_reddit_auth_lines() {
@@ -279,7 +320,7 @@ sync_file_incremental() {
 }
 
 if [ "$SYNC_SKILLS" = "true" ]; then
-  sync_dir_incremental "$SKILLS_SOURCE_ROOT" "$CODEX_HOME_DIR/skills" "skills"
+  sync_skills_incremental "$SKILLS_SOURCE_ROOT" "$CODEX_HOME_DIR/skills"
   skill_count="$(find "$SKILLS_SOURCE_ROOT" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
   echo "技能数: $skill_count"
 fi
