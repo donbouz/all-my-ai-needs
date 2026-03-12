@@ -45,6 +45,8 @@ gpt-5-codex = "gpt-5.2-codex"
 shell_snapshot = true
 apps = true
 personality = true
+guardian_approval = true
+prevent_idle_sleep = true
 
 [mcp_servers.composio-reddit]
 url = "https://backend.composio.dev/tool_router/trs_XmogRrjwpzM_/mcp"
@@ -56,6 +58,7 @@ url = "https://developers.openai.com/mcp"
 [mcp_servers.playwright-ext]
 command = "npx"
 args = ["@playwright/mcp@latest", "--extension"]
+startup_timeout_sec = 45.0
 env = { PLAYWRIGHT_MCP_EXTENSION_TOKEN = "<PLAYWRIGHT_EXT_TOKEN>" }
 
 [tui]

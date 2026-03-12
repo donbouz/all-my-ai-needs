@@ -1,6 +1,6 @@
 interface:
   display_name: "Playwright MCP Skill"
-  short_description: "Automate real browsers from the terminal"
+  short_description: "Reliable browser execution layer for the Scrapling -> PinchTab -> Playwright stack"
   icon_small: "./assets/playwright-small.svg"
   icon_large: "./assets/playwright.png"
-  default_prompt: "Automate this browser workflow with Playwright MCP (extension mode) and provide reliable execution steps."
+  default_prompt: "Use $playwright as the reliable execution layer in the Scrapling -> PinchTab -> Playwright stack. Prefer Playwright only when lighter extraction or inspection layers are insufficient, then drive the workflow with fresh snapshots, stable refs, and explicit post-action verification. State why Playwright is required now and report the final layer used."

@@ -6,10 +6,30 @@ description: "Use when the task requires automating a real browser. This skill i
 
 # Playwright MCP Skill
 
+Use Playwright as the reliable browser execution layer in a three-layer stack:
+- Scrapling: extraction-first
+- PinchTab: low-token browser inspection and lightweight interaction
+- `playwright-ext`: reliable browser execution
+
 Use a single channel only:
 - Always use `playwright-ext` MCP.
 - Do not use `playwright-cli` wrapper in this skill.
 - Do not pivot to `@playwright/test` unless the user explicitly asks for test files.
+
+## Role In The Stack
+
+Prefer Scrapling when:
+- the task is mainly scraping, parsing, or structured extraction.
+- HTTP or dynamic fetchers can solve the page without a browser-first workflow.
+
+Prefer PinchTab when:
+- the user mainly needs quick browser inspection, page text, or lightweight tab/session steps.
+- low-token page probing is enough to make the next decision.
+
+Choose Playwright when:
+- the workflow is interaction-heavy and must be verified step by step.
+- success depends on stable refs, precise DOM transitions, or repeated re-snapshot control.
+- upstream tools already proved that a lighter layer is not reliable enough for the current task.
 
 ## Prerequisite check (required)
 
@@ -38,11 +58,22 @@ brew install node
 
 ## Core workflow
 
-1. Open the page.
-2. Snapshot to get stable element refs.
-3. Interact using refs from the latest snapshot.
-4. Re-snapshot after navigation or significant DOM changes.
-5. Capture artifacts (screenshot, pdf, traces) when useful.
+1. Confirm that the task truly needs reliable browser execution rather than lighter extraction or inspection layers.
+2. Open the page.
+3. Snapshot to get stable element refs.
+4. Interact using refs from the latest snapshot.
+5. Re-snapshot after navigation or significant DOM changes.
+6. Verify page state after each important action.
+7. Capture artifacts (screenshot, pdf, traces) when useful.
+
+## Takeover Rules
+
+Take over from Scrapling or PinchTab when:
+- the current layer cannot prove that the intended page state change really happened.
+- login/session flow, modal flow, or multi-step navigation needs strong ref discipline.
+- the workflow has become complex enough that repeated browser verification is cheaper than continued fallback guessing.
+
+When Playwright takes over, say why it is now required and keep the flow inside Playwright until the critical interaction is verified.
 
 ## When to snapshot again
 
@@ -57,10 +88,12 @@ Refs can go stale. When a command fails due to a missing ref, snapshot again.
 
 ## Guardrails
 
+- Do not position Playwright as the default first hop when Scrapling or PinchTab can solve the task more cheaply.
 - Always snapshot before referencing element ids like `e12`.
 - Re-snapshot when refs seem stale.
 - Prefer explicit commands over `eval` and `run-code` unless needed.
 - When you do not have a fresh snapshot, use placeholder refs like `eX` and say why; do not bypass refs with `run-code`.
+- State the takeover reason when inheriting a task from Scrapling or PinchTab.
 - Use `--headed` when a visual check will help.
 - When capturing artifacts in this repo, use `output/playwright/` and avoid introducing new top-level artifact folders.
 - Default to MCP actions and workflows, not Playwright test specs.

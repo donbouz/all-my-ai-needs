@@ -1,4 +1,4 @@
 interface:
   display_name: "Scrapling Extractor"
-  short_description: "Scrapling抓取优先，受阻时回退Playwright-Ext"
-  default_prompt: "使用 $scrapling 先按 Fetcher/AsyncFetcher，再按 DynamicFetcher/StealthyFetcher 抓取并提取数据；若受阻请自动回退到 playwright-ext 并说明切换原因。"
+  short_description: "三层链路中的抓取优先层，必要时切到 PinchTab 或 Playwright-Ext"
+  default_prompt: "使用 $scrapling 作为 Scrapling -> PinchTab -> Playwright 的抓取优先层：先按 Fetcher/AsyncFetcher，再按 DynamicFetcher/StealthyFetcher 完成提取；若只需要轻量浏览器探测、正文读取或短链路交互，可切到 PinchTab；若需要高可靠交互、稳定 ref 或严格状态校验，请切到 playwright-ext。回复中必须说明最终使用层级与切换原因。"
