@@ -9,21 +9,31 @@
 ## 仓库结构
 
 ```text
-skills/
+all-my-ai-needs/
 ├── .claude-plugin/marketplace.json   # 插件注册信息
+├── AGENTS.md                         # 仓库级协作约束
+├── CLAUDE.md                         # 仓库级 Claude 协作约束
+├── README.md                         # 仓库级能力总览
 ├── setup.sh                          # Claude 平台配置入口
 ├── scripts/                          # 同步/引导脚本
 └── platforms/
     ├── claude/                       # Claude 唯一真源
+    │   ├── CLAUDE.md
     │   ├── .claude-plugin/plugin.json
     │   ├── .mcp.json
+    │   ├── runtime.yaml
     │   ├── skills/
     │   ├── hooks/
     │   └── agents/
     └── codex/                        # Codex 唯一真源
+        ├── AGENTS.md
+        ├── config.toml
+        ├── runtime.yaml
         ├── skills/
         ├── hooks/
         ├── agents/
+        ├── bin/
+        ├── rules/
         └── scripts/
 ```
 
@@ -47,7 +57,9 @@ description: "包含触发关键词的描述"
 - Markdown 正文为完整执行指令。
 - 参数约定：`$ARGUMENTS`（全部参数）、`$1`/`$2`（位置参数）。
 
-## 关键技能与依赖
+## 典型技能与依赖
+
+这里只列容易踩坑或依赖明显的典型技能；完整 skill 清单以根 `README.md` 与平台 README 为准。
 
 | 技能 | 外部依赖 | 运行时 |
 |---|---|---|
@@ -85,6 +97,7 @@ description: "包含触发关键词的描述"
 **注意**：
 - 用户要求 commit 或 push 时，如果本次改动涉及 `platforms/` 目录，必须先触发上述同步流程，不可跳过。
 - 用户要求“同步仓库内容”“提交”或“推送”时，先比较本地 `~/.codex`、`~/.claude` 与仓库受管全局配置；忽略 secrets、占位符和运行态噪音，若本地有值得保留的新内容，先提示同步回仓库，再继续。
+- 当新增、删除、重命名 skill，修改 `SKILL.md` 的 `description` 或平台归属，调整平台能力资产、同步入口、用户可见行为时，必须检查根 `README.md` 与受影响平台 README 是否需要同步更新。
 
 ### 提交前隐私与一致性检查（必做）
 
@@ -108,5 +121,7 @@ description: "包含触发关键词的描述"
 
 - 技能描述建议包含中英文触发词。
 - 每个技能目录建议包含 `SKILL.md`、`runtime.yaml`；如有确定性脚本或检查，再补 `README.md`、`setup.sh`。
+- 根 `README.md` 负责仓库级能力总览；`platforms/{claude,codex}/README.md` 负责对应平台的完整 skill 清单与同步说明。
+- skill 简介默认以对应 `SKILL.md` frontmatter 的 `description` 为准；README 只做压缩，不另写脱离源文案。
 - `scripts/` 下脚本应保持可执行、可重复运行、无副作用残留。
 - 提交信息遵循 Conventional Commits（如 `feat:`、`fix:`、`chore:`）。

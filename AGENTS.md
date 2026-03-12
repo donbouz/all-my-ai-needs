@@ -11,6 +11,12 @@
 
 每个技能目录建议包含 `SKILL.md`、`runtime.yaml`；如有确定性脚本或检查，再补 `README.md`、`setup.sh`。其中 Codex 技能必须有 `SKILL.md`。
 
+## README 维护约定
+- 根 `README.md` 负责仓库级能力总览：共用 skills、平台差异 skills、平台能力摘要、同步入口。
+- `platforms/{claude,codex}/README.md` 负责对应平台的完整 skill 清单、平台能力资产与同步说明。
+- skill 简介默认以对应 `SKILL.md` frontmatter 的 `description` 为准；README 只做压缩，不另写脱离源文案。
+- 当新增、删除、重命名 skill，修改 `SKILL.md` 的 `description` 或平台归属，调整平台能力资产、同步入口、用户可见行为时，提交或推送前必须检查并同步更新相关 README。
+
 ## 构建、测试与开发命令
 - `./setup.sh list`：列出可执行配置的 Claude 技能。
 - `./setup.sh all`：执行 Claude 的核心配置与全部技能配置。
@@ -79,6 +85,7 @@
 - Claude 同步链路：通过 `./setup.sh` 将仓库配置应用到本地 Claude 根目录。
 - 推送 GitHub 前必须获得用户明确确认，不允许自动推送。
 - 当用户要求“同步仓库内容”“提交”或“推送”时：先比较本地 `~/.codex`、`~/.claude` 与仓库受管全局配置；忽略 secrets、占位符和运行态噪音，若本地有值得保留的新内容，先提示同步回仓库，再继续后续动作。
+- 当本次改动触发 README 维护条件时：先检查根 `README.md` 与受影响平台 README 是否需要同步更新；若无需更新，需明确说明原因后再继续提交或推送。
 
 ## 安全与配置建议
 - 禁止提交密钥、令牌和机器私有配置。
