@@ -41,8 +41,9 @@ HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 <download-com
 2. Use PinchTab first for navigation, snapshots, page text reads, and lightweight browser steps.
 3. After meaningful actions, verify actual page state with URL/title/text/snapshot checks instead of trusting a transport-level success response.
 4. If the task becomes pure extraction work, hand it to Scrapling for cheaper and more reproducible data collection.
-5. If PinchTab fails due to unreachability/auth/capability limits or the workflow needs stricter control, switch to `playwright-ext`.
-6. In responses, explicitly mention the final layer used and the reason for any handoff.
+5. If the first PinchTab action fails, run quick triage before considering fallback.
+6. Compare repair cost vs fallback cost, then choose repair or `playwright-ext`.
+7. In responses, explicitly mention the final layer used and the reason for any handoff.
 
 ## Collaboration Boundaries
 
@@ -60,13 +61,38 @@ Escalate to `playwright-ext` when:
 - command success is not enough and the workflow requires strict business-state verification after each action.
 - the task is interaction-heavy enough that PinchTab's lightweight path becomes harder to trust than Playwright.
 
+## Quick Failure Triage (Required Before Fallback)
+
+On first failure, run this lightweight triage first (target: <= 3 minutes):
+
+```bash
+pinchtab health
+pinchtab instances
+pinchtab profiles
+pinchtab connect default || true
+pinchtab quick https://example.com
+```
+
+Interpretation guide:
+- `health` fails: service is down/unreachable, fallback is allowed.
+- instance exists but returns `context canceled`: likely stale browser context; do one reconnect + one smoke test before fallback.
+- smoke test succeeds: continue with PinchTab, do not fallback.
+- smoke test still fails after one recovery attempt: fallback is allowed.
+
 ## Fallback Rules (Mandatory)
 
-Immediately fallback to `playwright-ext` when:
-- PinchTab service is unreachable.
-- PinchTab returns authentication/authorization errors.
+Do not fallback on first failure without triage evidence.
+
+Fallback to `playwright-ext` only when one of these is true:
+- PinchTab service is unreachable after triage.
+- PinchTab returns authentication/authorization errors that require user re-login or manual action.
 - Required browser action is not supported in the current PinchTab flow.
 - post-action verification shows the page state did not actually change as required.
+- Estimated repair cost is higher than fallback cost.
+
+Cost heuristic:
+- Prefer repair when expected cost is <= 3 minutes and <= 2 low-risk commands.
+- Prefer fallback when expected cost is > 3 minutes, root cause is uncertain, or failures repeat after one recovery attempt.
 
 Minimal fallback check:
 
@@ -74,10 +100,16 @@ Minimal fallback check:
 codex mcp get playwright-ext
 ```
 
+When falling back, report:
+- triage commands executed
+- observed errors
+- reason fallback is cheaper/safer than further repair
+
 ## Guardrails
 
 - Do not claim PinchTab succeeded when execution has already switched to `playwright-ext`.
 - Do not treat `click`, `fill`, or `press` success as proof that the business action completed.
 - Keep action sequence explicit and auditable (navigate -> inspect -> interact -> verify).
 - Prefer Scrapling over PinchTab when the browser is only being used to extract page data.
+- Do not switch channels silently; include a short handoff note with decision rationale.
 - Follow user intent boundaries; do not perform unrelated side-effect operations.

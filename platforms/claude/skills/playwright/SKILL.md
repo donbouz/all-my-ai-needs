@@ -74,6 +74,11 @@ Take over from Scrapling or PinchTab when:
 
 When Playwright takes over, say why it is now required and keep the flow inside Playwright until the critical interaction is verified.
 
+If taking over from PinchTab failure, require brief triage evidence before takeover:
+- `pinchtab health`, `pinchtab instances`, and one smoke test result (or equivalent evidence)
+- categorize the switch reason as one of: `service-down`, `auth-blocked`, `capability-gap`, `higher-repair-cost`
+- include one concise handoff note in user-facing progress updates
+
 ## When to snapshot again
 
 Snapshot again after:
