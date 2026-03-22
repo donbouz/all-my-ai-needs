@@ -14,6 +14,7 @@
 
 - 默认同步 `skills/` 与受管 root 配置到 `~/.codex`
 - `config.toml` 默认不覆盖本机，仅在显式 `--sync-config` 时同步
+- `--sync-config` 覆盖 `config.toml` 时会保留本地 MCP 敏感配置（鉴权字段、env token/key）
 - `~/.codex/skills` 保留 `.system` 与本地未托管技能
 
 ## 当前 Skills

@@ -42,7 +42,8 @@ usage() {
 
   目录内每个 skill 必须包含 SKILL.md
   所有同步均为增量模式（保留目录外未托管内容）
-  使用 --sync-config 同步 root/config.toml 时会保留本地 composio-reddit 鉴权字段，避免覆盖本机 key 配置
+  使用 --sync-config 同步 root/config.toml 时会保留本地 MCP 敏感配置（鉴权字段、env token/key）
+  避免覆盖本机 secret
   覆盖确认支持交互；非交互默认跳过覆盖。可用 --yes 自动覆盖
 USAGE
 }
@@ -189,7 +190,7 @@ sync_skills_incremental() {
   done
 }
 
-extract_composio_reddit_auth_lines() {
+extract_mcp_sensitive_lines() {
   local config_file="$1"
   local output_file="$2"
 
@@ -197,63 +198,135 @@ extract_composio_reddit_auth_lines() {
   [ -f "$config_file" ] || return 0
 
   awk '
-    /^\[mcp_servers\.composio-reddit\]$/ { in_section=1; next }
-    /^\[/ { if (in_section) exit }
-    in_section && $1 ~ /^(bearer_token_env_var|http_headers|env_http_headers)$/ { print }
+    BEGIN { OFS = "\t" }
+    function is_mcp_base_section(s) { return s ~ /^\[mcp_servers\.[^]]+\]$/ && s !~ /\.env\]$/ }
+    function is_mcp_env_section(s) { return s ~ /^\[mcp_servers\.[^]]+\.env\]$/ }
+    function is_sensitive_base_key(k) {
+      return k == "bearer_token_env_var" || k == "http_headers" || k == "env_http_headers" || k == "env" || k ~ /(token|secret|password|api[_-]?key|authorization)/
+    }
+    /^\[/ {
+      section = $0
+      in_base = is_mcp_base_section(section)
+      in_env = is_mcp_env_section(section)
+      next
+    }
+    !(in_base || in_env) { next }
+    {
+      line = $0
+      sub(/^[[:space:]]*/, "", line)
+      if (line !~ /^[A-Za-z0-9_.-]+[[:space:]]*=/) next
+      key = line
+      sub(/[[:space:]]*=.*/, "", key)
+      key_lower = tolower(key)
+      if (in_env || is_sensitive_base_key(key_lower)) {
+        # 不回填占位符，避免“占位符覆盖真实值”的倒灌
+        if (match($0, /=[[:space:]]*"<[^"]+>"/)) next
+        print section, key, $0
+      }
+    }
   ' "$config_file" > "$output_file"
 }
 
-restore_composio_reddit_auth_lines() {
+restore_mcp_sensitive_lines() {
   local config_file="$1"
-  local auth_file="$2"
+  local sensitive_file="$2"
 
   [ -f "$config_file" ] || return 0
-  [ -s "$auth_file" ] || return 0
+  [ -s "$sensitive_file" ] || return 0
 
   local tmp_file
   tmp_file="$(mktemp)"
 
-  awk -v auth_file="$auth_file" '
+  awk -v sensitive_file="$sensitive_file" '
     BEGIN {
-      while ((getline line < auth_file) > 0) {
-        auth[++auth_count] = line
+      FS = "\t"
+      sep = "\034"
+      while ((getline line < sensitive_file) > 0) {
+        n = split(line, fields, FS)
+        section = fields[1]
+        key = fields[2]
+        value = fields[3]
+        if (n > 3) {
+          for (i = 4; i <= n; i++) value = value FS fields[i]
+        }
+        if (section == "" || key == "" || value == "") continue
+        preserve[section SUBSEP key] = value
+        if (!(section SUBSEP key in ordered_seen)) {
+          ordered[++ordered_count] = section SUBSEP key
+          ordered_seen[section SUBSEP key] = 1
+        }
+        if (section ~ /^\[mcp_servers\.[^]]+\.env\]$/) {
+          parent_section = section
+          sub(/\.env\]$/, "]", parent_section)
+          env_inline[parent_section SUBSEP key] = value
+          if (!(parent_section SUBSEP key in env_ordered_seen)) {
+            env_ordered[++env_ordered_count] = parent_section SUBSEP key
+            env_ordered_seen[parent_section SUBSEP key] = 1
+          }
+        }
       }
-      close(auth_file)
+      close(sensitive_file)
     }
-    function print_auth_lines() {
-      for (i = 1; i <= auth_count; i++) print auth[i]
+    function flush_missing(section,   idx, sk, key) {
+      if (section == "") return
+      for (idx = 1; idx <= ordered_count; idx++) {
+        sk = ordered[idx]
+        split(sk, parts, SUBSEP)
+        if (parts[1] != section) continue
+        key = parts[2]
+        if (!(section SUBSEP key in emitted)) {
+          print preserve[section SUBSEP key]
+          emitted[section SUBSEP key] = 1
+        }
+      }
     }
-    /^\[mcp_servers\.composio-reddit\]$/ {
-      in_section = 1
-      auth_inserted = 0
+    /^\[/ {
+      flush_missing(current_section)
+      current_section = $0
       print
       next
     }
-    in_section && /^\[/ {
-      if (!auth_inserted) {
-        print_auth_lines()
-        auth_inserted = 1
+    {
+      if (current_section != "") {
+        line = $0
+        trimmed = line
+        sub(/^[[:space:]]*/, "", trimmed)
+        if (trimmed ~ /^[A-Za-z0-9_.-]+[[:space:]]*=/) {
+          key = trimmed
+          sub(/[[:space:]]*=.*/, "", key)
+
+          if (key == "env") {
+            changed = 0
+            for (idx = 1; idx <= env_ordered_count; idx++) {
+              sk = env_ordered[idx]
+              split(sk, parts, SUBSEP)
+              if (parts[1] != current_section) continue
+              env_key = parts[2]
+              before = line
+              gsub(env_key "[[:space:]]*=[[:space:]]*\"[^\"]*\"", env_inline[sk], line)
+              if (line != before) {
+                emitted[sk] = 1
+                changed = 1
+              }
+            }
+            if (changed) {
+              print line
+              emitted[current_section SUBSEP key] = 1
+              next
+            }
+          }
+
+          if (current_section SUBSEP key in preserve) {
+            print preserve[current_section SUBSEP key]
+            emitted[current_section SUBSEP key] = 1
+            next
+          }
+        }
       }
-      in_section = 0
       print
-      next
     }
-    in_section {
-      if ($1 ~ /^(bearer_token_env_var|http_headers|env_http_headers)$/) {
-        next
-      }
-      print
-      if (!auth_inserted && $1 == "url") {
-        print_auth_lines()
-        auth_inserted = 1
-      }
-      next
-    }
-    { print }
     END {
-      if (in_section && !auth_inserted) {
-        print_auth_lines()
-      }
+      flush_missing(current_section)
     }
   ' "$config_file" > "$tmp_file"
 
@@ -265,7 +338,7 @@ sync_file_incremental() {
   local target_file="$2"
   local label="$3"
   local rsync_args=("${base_rsync_args[@]}")
-  local local_auth_tmp=""
+  local local_mcp_sensitive_tmp=""
 
   if [ ! -f "$source_file" ]; then
     echo "[跳过] ${label}（源文件不存在）: $source_file"
@@ -304,19 +377,19 @@ sync_file_incremental() {
   fi
 
   if [ "$label" = "root/config.toml" ] && [ -f "$target_file" ] && [ "$DRY_RUN" != "true" ]; then
-    local_auth_tmp="$(mktemp)"
-    extract_composio_reddit_auth_lines "$target_file" "$local_auth_tmp"
+    local_mcp_sensitive_tmp="$(mktemp)"
+    extract_mcp_sensitive_lines "$target_file" "$local_mcp_sensitive_tmp"
   fi
 
   echo "[同步] ${label}: $source_file -> $target_file"
   rsync "${rsync_args[@]}" "$source_file" "$target_file"
 
-  if [ -n "$local_auth_tmp" ]; then
-    restore_composio_reddit_auth_lines "$target_file" "$local_auth_tmp"
-    if [ -s "$local_auth_tmp" ]; then
-      echo "[保留] ${label} composio-reddit 本地鉴权配置已保留"
+  if [ -n "$local_mcp_sensitive_tmp" ]; then
+    restore_mcp_sensitive_lines "$target_file" "$local_mcp_sensitive_tmp"
+    if [ -s "$local_mcp_sensitive_tmp" ]; then
+      echo "[保留] ${label} 本地 MCP 敏感配置已保留"
     fi
-    rm -f "$local_auth_tmp"
+    rm -f "$local_mcp_sensitive_tmp"
   fi
 }
 
