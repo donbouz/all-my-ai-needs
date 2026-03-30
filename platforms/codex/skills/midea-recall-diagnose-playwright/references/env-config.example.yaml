@@ -3,7 +3,7 @@ notes:
   - "Copy this file to env-config.local.yaml before filling real URLs."
   - "Keep credentials, cookies, and tokens out of this file."
   - "Use browser login state instead of putting auth headers here."
-  - "For sit/uat, ES console page_url can use the shared Kibana Dev Tools entry when accessible."
+  - "For multi-cluster prod, set es_console.cluster_routes and source_system_cluster_map_excel."
 
 environments:
   sit:
@@ -21,11 +21,15 @@ environments:
       default_time_range: "now-3d"
       target_search_hint: "\"<targetId>\" and \"TRACE_TARGET_ES\""
     es_console:
-      page_url: "https://<sit-console-origin>/elasticsearch/instance/instance-menu/indexSearch?...&tab=DevelopmentTool"
       request_proxy_url: "https://<sit-console-api>/Elasticsearch/2024-01-11/dataRetrievales/requestEs"
-      instance_id: "<instanceId>"
-      region_id: "<regionId>"
-      zone: "<zone>"
+      source_system_cluster_map_excel: "来源系统索引.xlsx"
+      source_system_cluster_map_sheet: "Sheet1"
+      cluster_routes:
+        集群1:
+          page_url: "https://<sit-console-origin>/elasticsearch/instance/instance-menu/indexSearch?...&tab=DevelopmentTool"
+          instance_id: "<instanceId>"
+          region_id: "<regionId>"
+          zone: "<zone>"
 
   uat:
     label: "UAT"
@@ -42,11 +46,15 @@ environments:
       default_time_range: "now-3d"
       target_search_hint: "\"<targetId>\" and \"TRACE_TARGET_ES\""
     es_console:
-      page_url: "https://<uat-console-origin>/elasticsearch/instance/instance-menu/indexSearch?...&tab=DevelopmentTool"
       request_proxy_url: "https://<uat-console-api>/Elasticsearch/2024-01-11/dataRetrievales/requestEs"
-      instance_id: "<instanceId>"
-      region_id: "<regionId>"
-      zone: "<zone>"
+      source_system_cluster_map_excel: "来源系统索引.xlsx"
+      source_system_cluster_map_sheet: "Sheet1"
+      cluster_routes:
+        集群1:
+          page_url: "https://<uat-console-origin>/elasticsearch/instance/instance-menu/indexSearch?...&tab=DevelopmentTool"
+          instance_id: "<instanceId>"
+          region_id: "<regionId>"
+          zone: "<zone>"
 
   prod:
     label: "PROD"
@@ -63,8 +71,12 @@ environments:
       default_time_range: "now-3d"
       target_search_hint: "\"<targetId>\" and \"TRACE_TARGET_ES\""
     es_console:
-      page_url: "https://<prod-console-origin>/elasticsearch/instance/instance-menu/indexSearch?...&tab=DevelopmentTool"
       request_proxy_url: "https://<prod-console-api>/Elasticsearch/2024-01-11/dataRetrievales/requestEs"
-      instance_id: "<instanceId>"
-      region_id: "<regionId>"
-      zone: "<zone>"
+      source_system_cluster_map_excel: "来源系统索引.xlsx"
+      source_system_cluster_map_sheet: "Sheet1"
+      cluster_routes:
+        集群1:
+          page_url: "https://<prod-console-origin>/elasticsearch/instance/instance-menu/indexSearch?...&tab=DevelopmentTool"
+          instance_id: "<instanceId>"
+          region_id: "<regionId>"
+          zone: "<zone>"

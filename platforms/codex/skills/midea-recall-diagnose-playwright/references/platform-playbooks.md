@@ -1,96 +1,39 @@
-# 平台操作手册
+# 平台操作手册（精简版）
 
-## 环境分流（默认）
+> 说明：本文件是辅助说明，执行以 `SKILL.md` 为准。
 
-- `sit` / `uat`：优先本地启动复现和本地执行日志取证，再用 `trace/recordInfo`、ELK、ES 做交叉验证。
-- `prod`：优先 `trace/recordInfo` + ELK 阶段定位，再按需进入 ES 取检索根因证据。
+## 环境分流
+
+- `sit/uat`：优先本地复现 + 本地日志；证据不足再用 ELK/ES。
+- `prod`：
+  - 有完整请求：先回放拿 replay `requestId`，再 ELK/ES。
+  - 只有 `requestId`：直接 requestId-first 查 ELK。
 
 ## 检索接口
 
-- 优先使用浏览器登录态，而不是独立 token。
-- `sit` / `uat` 在可本地启动时，先做本地复现并记录关键阶段证据（`requestId`、`cmpId`、`hit/returnedHitCount/totalHitCount`）。
-- 若页面出现登录态问题（密码/MFA/重登），先暂停并等待用户在当前标签页手动登录，登录完成后继续。
-- 只有在“已确认登录成功”但浏览器访问仍持续受限（例如稳定 `403`）时，才启用终端 `curl` 直发：
-  - `POST /rag-recall/api/search/keyword`
-  - `GET /rag-recall/api/search/trace/recordInfo?linkId=<requestId>`
-  - 请求头沿用用户给定的 `appId`/`appChannel`，并继续使用 ELK 页面做后续阶段取证。
-- 若 live request 缺少 `headers.appId` / `headers.appChannel`，不得猜测或沿用历史值。必须标记未知，并要求用户补齐或从本地日志提取后再下结论。
-- 若用户给的是完整请求体：
-  - 先用 `scripts/prepare_diagnosis.py` 生成规范化输入。
-  - 确保 `requestId` 已存在。
-  - 确保 `traceTargetIds` 已包含所有目标 ID。
-- 发送 live request 时，只保留必要的响应摘要：
-  - `requestId`
-  - 返回总数
-  - 顶层错误信息
-
-如果页面没有现成调用入口，优先在同域已登录页面里用 `browser_run_code` 或 `browser_evaluate` 发 `fetch` 请求，不要切到无登录态的外部命令。
-
-## Trace 接口
-
-- 优先访问 `GET /rag-recall/api/search/trace/recordInfo?linkId=<requestId>`。
-- 默认只看这些字段：
-  - `linkId`
-  - `question`
-  - `requestBody` 摘要
-  - `stepList[].cmpId`
-  - `stepList[].cmpName`
-  - `stepList[].operateMsg`
-  - `stepList[].timeSpent`
-  - `detailList[].targetUrl`
-  - `detailList[].error`
-- 不要把完整 `responseBody` 拉进上下文。
-- 若需要展开，先用 `scripts/compact_trace.py --expand-step <cmpId>` 做二次裁剪。
+- 回放统一用终端：`POST /rag-recall/api/search/keyword`。
+- 禁止浏览器地址栏访问 `keyword`（会变成 `GET`）。
+- 禁止调用 `trace/recordInfo`，避免口径冲突。
+- 若原始请求日志里只有 `body.appId` 没有 `headers.appId`，允许用 `body.appId` 回填回放头；`appChannel` 同理。
 
 ## ELK
 
-- 默认时间窗使用 `now-3d` 到 `now`。
-- 不要默认扩大到 3 天之外，除非用户明确要求。
-- 优先用 `targetId` 检索，而不是 `requestId`。
-- 先给阶段结论；若丢在文本/向量召回阶段，默认继续做根因分析。
-- 常用 KQL 组合：
-  - `"<targetId>"`
-  - `"<targetId>" and "TRACE_TARGET_ES"`
-  - `"<targetId>" and "full_range_docTxtRecall"`
-  - `"<targetId>" and "full_range_faqTxtRecall"`
-  - `"<targetId>" and "faq_vector_retrieval_batch_es"`
-  - `"<targetId>" and "full_range_rerank"`
-  - `"<targetId>" and "hit=false"`
-- FAQ 漏召回时，优先取两条日志对比：
-  - `cmpId=full_range_faqTxtRecall phase=request|response`
-  - `cmpId=faq_vector_retrieval_batch_es phase=request|response`
-- 重点看 `faq_vector_retrieval_batch_es phase=request` 里的 `requestDsl`：
-  - 若 `terms.knowledge_base_id` 不包含目标 FAQ，则说明目标没进入向量候选集。
-- 当 ELK 已明确某阶段 `hit=false` 时，先判定阶段，不要急着进 ES。
-- 如果 3 天内没有 `TRACE_TARGET_ES` 或找不到对应 `requestId` 的 trace 证据，先判为“未用 trace 复现”，然后：
-  - 用带 `traceTargetIds` 的请求重放一次，或
-  - 明确让用户发一次带 `traceTargetIds` 的复现请求。
+- 回放后第一条查询必须含：`requestId + targetId + TRACE_TARGET_ES`。
+- `TRACE_TARGET_ES` 只会在 `traceTargetIds` 非空时打印；原始请求若 `traceTargetIds=[]`，要准备回放注入。
+- 时间窗：先 `±15 分钟`，再 `now-3d~now`。
+- 禁止先用 `targetId` 单独 broad search。
+- 取证方式：仅 Playwright 页面操作；禁止 `curl`/脚本直连 ELK。
+- 目标：按时间升序定位首个 `phase=response hit=false` 的 `cmpId`。
 
-## ES 控制台
+## ES
 
-- 只在检索阶段问题时进入 ES；文本/向量召回丢失默认进入。
-- `sit` / `uat` 默认入口（需登录态）：使用 `env-config.local.yaml` 的 `es_console.page_url`。
-- 每次执行 DSL 前，先点击 `Clear this input` 和 `Clear this output`，避免编辑器历史内容污染结论。
-- 优先复用 trace 或 ELK 里已经出现的原始 DSL。
-- 文本召回默认先做最短链路：目标存在性 -> 原始 DSL -> `keep filter + remove text must` 对照。
-- 文本阶段已定因时，默认不继续展开向量阶段；只有用户明确要求或证据矛盾时再查向量。
-- `_explain` / `_analyze` 必须在物理索引执行：
-  - 先用 `_search` 拿目标 `_index`
-  - 再执行 `/{index}/_explain/{id}` 或 `/{index}/_analyze`
-- 先用原始 `size` 复跑，再把 `size` 拉大到 `10000` 看真实 rank（仅在需要排序证据时）。
-- 默认输出：`total hits`、`returned hits`、目标 `rank/score`、阈值分数、关键过滤条件（如 `skill_id` / `knowledge_base_id`）。
-- 仅在用户问“为什么排这么后”时，再追加 `_explain`；仅在用户问“为什么没匹配上”时，再按需追加 `_analyze` 命中块对比。
-- 若用户要“目标文档文本召回相关完整存储”，默认导出不含向量的文本字段全集（`search_item_obj`、`content`、ID/权限/关系字段）。
-- 如果页面上的响应编辑器会截断结果，优先改用：
-  - 网络请求抓包
-  - 浏览器内 `fetch`
-  - 控制台代理接口的完整响应读取
+- 仅当首次丢失在召回阶段时进入 ES。
+- 进入 ES 前必须先按 `requestDsl/targetUrl` 解析控制台地址；若命中共享索引歧义，再用 `sourceSystem` 消歧，仍失败则直接阻断。
+- 默认三步：`原DSL` -> `目标存在性` -> `去 text must 对照`。
+- 字段不明确或 DSL 报错时再查 `_mapping`。
+- 取证方式：仅 Playwright 页面操作；禁止 `curl` 直连 ES。
 
-## Playwright 注意事项
+## 自动化注意事项
 
-- 先拿快照，再引用元素 ref。
-- 页面跳转、切 tab、展开面板后要重新快照。
-- 页面 UI 展示的 JSON 可能被截断；这类场景优先用 `browser_run_code` 或网络抓取完整数据。
-- 发起多次查询时，要校验“响应是否对应当前请求”（例如检查路径关键字、响应结构签名），避免读取到上一条结果。
-- 连续 DSL 诊断时，强制执行“清空输入/清空输出 -> 填入 DSL -> 执行 -> 校验响应签名”顺序。
-- 浏览器自动化的目标是拿证据，不是还原 UI 操作本身。能直接抓请求体或响应体时，优先抓数据。
+- 页面跳转/切 tab 后重新快照。
+- 多次执行 DSL 时，强制 `清空输入 -> 清空输出 -> 执行 -> 校验响应签名`。

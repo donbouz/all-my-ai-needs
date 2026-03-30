@@ -20,7 +20,7 @@
 | `google-workspace` | 只读访问 Gmail、Drive、Docs、Calendar 等 Google Workspace 能力 | Claude / Codex |
 | `image-gen` | 图片生成与结构化图表生成 | Claude / Codex |
 | `linuxdo` | 只读访问 LINUX DO 论坛 | Claude / Codex |
-| `midea-recall-diagnose-playwright` | keyword 检索漏召回排障与请求复现 | Claude / Codex |
+| `midea-recall-diagnose-playwright` | keyword 漏召回排查、回放与 trace/ELK/ES 取证 | Claude / Codex |
 | `orbit-os` | OrbitOS Obsidian Vault 共享配置与规范 | Claude / Codex |
 | `orbit-session-diary` | 基于本地会话日志生成 Obsidian 日记 | Claude / Codex |
 | `peekaboo` | macOS 截图与视觉分析 | Claude / Codex |

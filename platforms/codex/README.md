@@ -28,7 +28,7 @@
 | `google-workspace` | 只读访问 Google Workspace 内容 | 依赖 gogcli 与 OAuth 登录态 |
 | `image-gen` | 图片生成与结构化图表生成 | 依赖图片 provider 配置 |
 | `linuxdo` | 只读访问 LINUX DO 论坛 | 依赖 Chrome Cookie |
-| `midea-recall-diagnose-playwright` | keyword 检索漏召回排障与请求复现 | 依赖 Playwright 会话与本地脚本 |
+| `midea-recall-diagnose-playwright` | keyword 漏召回排查、回放与 trace/ELK/ES 取证 | 依赖 Playwright 会话与本地脚本 |
 | `openai-docs` | OpenAI 官方文档与 API 实现指引 | 依赖官方 docs MCP |
 | `orbit-os` | OrbitOS Obsidian Vault 共享配置与规范 | 供 orbit-* 系列 skill 引用 |
 | `orbit-session-diary` | 基于本地会话日志生成 Obsidian 日记 | 依赖本地 jsonl 与目标 Vault |
