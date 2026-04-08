@@ -16,7 +16,7 @@
 | Skill | 能力 | 平台 |
 | --- | --- | --- |
 | `bird-twitter` | 只读访问 X/Twitter 内容 | Claude / Codex |
-| `bird-twitter-bookmarks` | 使用 Field Theory CLI 同步/检索/分类 X 收藏夹本地数据 | Claude / Codex |
+| `bird-twitter-bookmarks` | 使用 Field Theory CLI 同步/检索/分类 X 收藏夹本地数据，并支持 unknown 条目 L2 细分标签与复核队列 | Claude / Codex |
 | `context-hub` | 通过 chub 检索版本化 API/SDK 文档与技能内容 | Claude / Codex |
 | `google-workspace` | 只读访问 Gmail、Drive、Docs、Calendar 等 Google Workspace 能力 | Claude / Codex |
 | `image-gen` | 图片生成与结构化图表生成 | Claude / Codex |

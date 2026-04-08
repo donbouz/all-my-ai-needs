@@ -8,12 +8,15 @@ sync_paths:
   - setup.sh
   - skill.config.json
   - runtime.yaml
+  - scripts
 
 dependencies:
   commands:
     - node
     - npm
     - ft
+    - python3
+    - sqlite3
 
 manual_steps:
   - 安装 fieldtheory：HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 npm install -g fieldtheory
@@ -25,3 +28,4 @@ verify:
   - npm --version
   - ft --version
   - NODE_USE_ENV_PROXY=1 HTTP_PROXY=http://127.0.0.1:7897 HTTPS_PROXY=http://127.0.0.1:7897 ft path
+  - python3 platforms/claude/skills/bird-twitter-bookmarks/scripts/bookmark_l2_labels.py --help
