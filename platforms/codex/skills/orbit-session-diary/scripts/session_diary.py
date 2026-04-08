@@ -18,7 +18,7 @@ MARK_START = "<!-- SESSION_SUMMARY_AUTO_START -->"
 MARK_END = "<!-- SESSION_SUMMARY_AUTO_END -->"
 
 DEFAULT_VAULT_ROOT = (
-    "~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Sam's"
+    "/Users/suqi3/obVault/sams-vault"
 )
 DEFAULT_DIARY_DIR = "01_日记"
 DEFAULT_TEMPLATE_NAME = "_日记模板.md"

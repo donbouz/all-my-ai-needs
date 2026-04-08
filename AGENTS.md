@@ -96,6 +96,11 @@
 - Codex root 受管配置同步链路：`platforms/codex/{AGENTS.md,agents,bin,hooks,scripts,rules}` -> `~/.codex/...`。
 - `platforms/codex/config.toml` 默认不自动覆盖 `~/.codex/config.toml`；仅在显式 `--sync-config` 时同步。
 - Claude 同步链路：通过 `./setup.sh` 将仓库配置应用到本地 Claude 根目录。
+- Hermes 反向回流仅允许“用户手动触发 + 人工审批”，禁止自动周期回流或未审批覆盖。
+- Hermes 回流规则（简版）：
+  - Hermes 技能目录位置：`~/.hermes/skills`。
+  - 用户手动触发“检查/执行 Hermes 回流”时，仅处理与仓库同名的 skill；其他不回流。
+  - 回流执行前必须先输出“差异总结（新增/删除/修改）”，并等待用户审核确认后再落盘。
 - 推送 GitHub 前必须获得用户明确确认，不允许自动推送。
 - 当用户要求“同步仓库内容”“提交”或“推送”时：先比较本地 `~/.codex`、`~/.claude` 与仓库受管全局配置；忽略 secrets、占位符和运行态噪音，若本地有值得保留的新内容，先提示同步回仓库，再继续后续动作。
 - 当本次改动触发 README 维护条件时：先检查根 `README.md` 与受影响平台 README 是否需要同步更新；若无需更新，需明确说明原因后再继续提交或推送。
