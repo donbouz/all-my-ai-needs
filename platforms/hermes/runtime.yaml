@@ -1,0 +1,39 @@
+platform: hermes
+runtime_version: 1
+mode: documentation-only
+
+official_layout:
+  skills_root: ~/.hermes/skills
+  runtime_root: ~/.hermes
+  upstream_source: ~/.hermes/hermes-agent
+  notes:
+    - Hermes active skills 使用分类目录布局：~/.hermes/skills/<category>/<skill>
+    - 当前仓库只记录 Hermes 迁移与差异基线，不提供自动同步脚本
+    - 会话、日志、记忆、.hub 缓存与 skill-promotions 都属于运行态，不纳入仓库受管内容
+
+skill_runtime_contract:
+  required_fields:
+    - runtime_version
+    - skill
+    - platform
+    - sync_paths
+    - dependencies
+    - manual_steps
+    - verify
+  optional_fields:
+    - services
+  notes:
+    - 如后续要把某个 Hermes skill 纳入仓库管理，可在对应目录补充 runtime.yaml
+    - platform 必须固定为 hermes
+    - 仅记录与仓库同名且值得长期保留的 Hermes skill，不追踪整份 ~/.hermes/skills
+
+managed_root_paths: []
+
+manual_steps:
+  - 新机先按官方方式安装 Hermes，再参考 platforms/hermes/README.md 手动恢复同名 skills
+  - 涉及 Hermes 回流时，只比较 ~/.hermes/skills 下与仓库同名的 skill
+  - 回流执行前必须先输出差异总结，并等待用户审核确认后再落盘
+
+verify:
+  - hermes skills list
+  - find ~/.hermes/skills -mindepth 2 -maxdepth 2 -type d

@@ -1,9 +1,10 @@
-# All My AI Needs（Claude Code + Codex）
+# All My AI Needs（Claude Code + Codex + Hermes）
 
-这个仓库维护我当前在 Claude Code 与 Codex 上使用的 agent 能力、skills、同步脚本与平台配置。
+这个仓库维护我当前在 Claude Code、Codex 与 Hermes 上使用的 agent 能力、skills、同步脚本与平台配置。其中 Hermes 当前以“文档基线”方式纳入仓库：记录本机目录、迁移步骤与差异基线，但不提供自动同步脚本。
 
 - Claude 平台真源：`platforms/claude/`
 - Codex 平台真源：`platforms/codex/`
+- Hermes 文档基线：`platforms/hermes/`（记录当前本机使用态与迁移说明）
 - 根脚本入口：`./setup.sh`、`./scripts/sync_to_codex.sh`、`./scripts/bootstrap.sh`
 - skill 简介以对应 `SKILL.md` 的 `description` 为准；根 README 负责仓库级总览，平台 README 负责各平台完整清单
 
@@ -68,6 +69,14 @@
 - 平台特有能力集中在 `openai-docs`、`screenshot`
 - skill 级 `runtime.yaml` 仅同步到对应 skill 目录；平台级 `platforms/codex/runtime.yaml` 仅供仓库内 AI 理解迁移规则
 
+### Hermes
+
+- `platforms/hermes/` 记录当前本机 `~/.hermes` 的目录布局、skill 映射关系与迁移基线
+- Hermes 当前不走仓库脚本同步；新机恢复采用“官方安装 + 手动放置同名 skill + 人工审核差异”的方式
+- Hermes active skills 使用分类目录：`~/.hermes/skills/<category>/<skill>`
+- 官方安装基线来自 `~/.hermes/hermes-agent`；仓库只记录值得保留的本机差异与已批准回流规则
+- 同名 skill 回流仍按人工触发执行，先出差异总结，再决定是否回写仓库
+
 ## 快速入口
 
 ### Claude
@@ -102,3 +111,4 @@
 
 - Claude 平台完整能力与同步说明：`platforms/claude/README.md`
 - Codex 平台完整能力与同步说明：`platforms/codex/README.md`
+- Hermes 当前使用态、迁移基线与差异说明：`platforms/hermes/README.md`
