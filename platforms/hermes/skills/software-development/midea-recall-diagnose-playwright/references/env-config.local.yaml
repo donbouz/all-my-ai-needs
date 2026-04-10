@@ -1,0 +1,56 @@
+version: 1
+notes:
+  - "Local environment config for recall diagnosis."
+  - "Use browser login state instead of storing auth headers here."
+  - "ES console route is resolved by sourceSystem -> cluster mapping from 来源系统索引.xlsx."
+
+environments:
+  prod:
+    label: "PROD"
+    search:
+      base_url: "https://iop.midea.com"
+      keyword_path: "/rag-recall/api/search/keyword"
+      trace_record_info_path: "/rag-recall/api/search/trace/recordInfo"
+      default_headers:
+        appId: "<required>"
+        appChannel: "<optional>"
+    elk:
+      discover_base_url: "https://elkpro.midea.com/app/discover"
+      index_pattern: "logstash"
+      default_time_range: "now-3d"
+      target_search_hint: "\"<targetId>\" and \"TRACE_TARGET_ES\""
+    es_console:
+      request_proxy_url: "https://<prod-console-api>/Elasticsearch/2024-01-11/dataRetrievales/requestEs"
+      source_system_cluster_map_excel: "来源系统索引.xlsx"
+      source_system_cluster_map_sheet: "Sheet1"
+      cluster_routes:
+        集群1:
+          cluster_alias: "aigc_official_doc"
+          page_url: "https://console-cloud.midea.com/elasticsearch/instance/instance-menu/indexSearch?instanceId=5401&regionId=cn-foshan&zone=cn-foshan-1&regionHidden=true&zoneHidden=true&tab=DevelopmentTool"
+          instance_id: "5401"
+          region_id: "cn-foshan"
+          zone: "cn-foshan-1"
+        集群2:
+          cluster_alias: "aigc_mcsp_ic"
+          page_url: "https://console-cloud.midea.com/elasticsearch/instance/instance-menu/indexSearch?instanceId=5400&regionId=cn-foshan&zone=cn-foshan-1&regionHidden=true&zoneHidden=true&tab=DevelopmentTool"
+          instance_id: "5400"
+          region_id: "cn-foshan"
+          zone: "cn-foshan-1"
+        集群3:
+          cluster_alias: "aigc_knowledge"
+          page_url: "https://console-cloud.midea.com/elasticsearch/instance/instance-menu/indexSearch?instanceId=5399&regionId=cn-foshan&zone=cn-foshan-1&regionHidden=true&zoneHidden=true&tab=DevelopmentTool"
+          instance_id: "5399"
+          region_id: "cn-foshan"
+          zone: "cn-foshan-1"
+        集群4:
+          cluster_alias: "aigc_集群4"
+          page_url: "https://console-cloud.midea.com/elasticsearch/instance/instance-menu/indexSearch?instanceId=5398&regionId=cn-foshan&zone=cn-foshan-1&regionHidden=true&zoneHidden=true&tab=DevelopmentTool"
+          instance_id: "5398"
+          region_id: "cn-foshan"
+          zone: "cn-foshan-1"
+        集群5:
+          cluster_alias: "aigc_集群5"
+          page_url: "https://console-cloud.midea.com/elasticsearch/instance/instance-menu/indexSearch?instanceId=5397&regionId=cn-foshan&zone=cn-foshan-1&regionHidden=true&zoneHidden=true&tab=DevelopmentTool"
+          instance_id: "5397"
+          region_id: "cn-foshan"
+          zone: "cn-foshan-1"
