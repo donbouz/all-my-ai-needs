@@ -4,5 +4,6 @@
   "version": "1.0.0",
   "author": { "name": "codingSamss" },
   "repository": "https://github.com/codingSamss/all-my-ai-needs",
-  "license": "MIT"
+  "license": "MIT",
+  "forkedBy": "personal fork for learning and experimentation"
 }
