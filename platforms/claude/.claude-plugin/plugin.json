@@ -6,5 +6,10 @@
   "repository": "https://github.com/codingSamss/all-my-ai-needs",
   "license": "MIT",
   "forkedBy": "personal fork for learning and experimentation",
-  "notes": "Forked to experiment with custom prompts and workflow tweaks. Main interest: screenshot analysis and safe commit flows."
+  "notes": "Forked to experiment with custom prompts and workflow tweaks. Main interest: screenshot analysis and safe commit flows.",
+  "personalDefaults": {
+    "preferredLanguage": "en",
+    "screenshotAnalysis": { "verbosity": "detailed" },
+    "safeCommit": { "requireConfirmation": true }
+  }
 }
