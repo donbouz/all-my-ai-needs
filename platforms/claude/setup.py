@@ -87,38 +87,5 @@ def check_env_vars(config: dict):
         print("\n[WARN] Missing environment variables:")
         for server_name, key, var_name in missing:
             print(f"  - [{server_name}] {key} expects ${var_name}")
+        # Tip: I keep these in a ~/.config/all-my-ai-needs/.env file and source it in my .zshrc
         print("  Set these in your shell profile or a .env file before using Claude.")
-    else:
-        print("[OK] All required environment variables are set")
-
-
-def validate_plugin_json():
-    """Validate the Claude plugin manifest."""
-    if not PLUGIN_CONFIG.exists():
-        print(f"[WARN] Plugin config not found: {PLUGIN_CONFIG}")
-        return
-
-    with open(PLUGIN_CONFIG) as f:
-        plugin = json.load(f)
-
-    name = plugin.get("name", "<unnamed>")
-    version = plugin.get("version", "<no version>")
-    print(f"[OK] Plugin manifest: {name} v{version}")
-
-
-def main():
-    print("=== all-my-ai-needs: Claude Platform Setup ===")
-    print()
-
-    check_python_version()
-    check_node_version()
-    validate_plugin_json()
-    config = validate_mcp_config()
-    check_env_vars(config)
-
-    print()
-    print("Setup complete. Run platforms/claude/setup.sh for full shell-based install.")
-
-
-if __name__ == "__main__":
-    main()
