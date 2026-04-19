@@ -33,7 +33,8 @@ echo "==> Node.js version: $(node --version)"
 if [ -f "$SCRIPT_DIR/package.json" ]; then
     echo "==> Installing npm dependencies..."
     cd "$SCRIPT_DIR"
-    npm install
+    # Use --prefer-offline to speed up repeated installs if cache is warm
+    npm install --prefer-offline
 fi
 
 # Validate plugin.json
@@ -65,6 +66,10 @@ EOF
     echo "    Created $ENV_FILE — please fill in your API keys."
 else
     echo "==> Found existing .env file."
+    # Warn if ANTHROPIC_API_KEY appears to be unset in the existing .env
+    if grep -qE '^ANTHROPIC_API_KEY=$' "$ENV_FILE"; then
+        echo "    WARNING: ANTHROPIC_API_KEY is not set in .env — Claude won't work without it."
+    fi
 fi
 
 echo ""
