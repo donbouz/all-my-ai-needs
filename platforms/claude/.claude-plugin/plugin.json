@@ -9,7 +9,7 @@
   "notes": "Forked to experiment with custom prompts and workflow tweaks. Main interest: screenshot analysis and safe commit flows.",
   "personalDefaults": {
     "preferredLanguage": "en",
-    "screenshotAnalysis": { "verbosity": "detailed" },
-    "safeCommit": { "requireConfirmation": true }
+    "screenshotAnalysis": { "verbosity": "concise" },
+    "safeCommit": { "requireConfirmation": true, "showDiffPreview": true }
   }
 }
