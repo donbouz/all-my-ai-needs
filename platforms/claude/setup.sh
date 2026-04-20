@@ -34,7 +34,8 @@ if [ -f "$SCRIPT_DIR/package.json" ]; then
     echo "==> Installing npm dependencies..."
     cd "$SCRIPT_DIR"
     # Use --prefer-offline to speed up repeated installs if cache is warm
-    npm install --prefer-offline
+    # Using --no-fund and --no-audit to reduce noise in personal setup
+    npm install --prefer-offline --no-fund --no-audit
 fi
 
 # Validate plugin.json
